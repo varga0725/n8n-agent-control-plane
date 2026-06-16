@@ -1,0 +1,29 @@
+{
+  "skill_name": "n8n-workflow-builder",
+  "evals": [
+    {
+      "id": 0,
+      "name": "sheets-to-slack-integration",
+      "prompt": "Build me an n8n workflow: when a new row is added to a Google Sheet, take the row contents and post them as a message to our Slack #leads channel. Give me the workflow JSON I can import.",
+      "expected_output": "Valid importable workflow JSON with a Google Sheets trigger node connected to a Slack node, correct connection format (keyed by node name, array-of-arrays), settings with executionOrder, and a note about wiring credentials.",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 1,
+      "name": "scheduled-rss-email-hungarian",
+      "prompt": "Készíts egy n8n workflow-t, ami minden reggel 8-kor lekéri egy RSS feed (https://news.ycombinator.com/rss) új elemeit, és elküldi őket nekem e-mailben. Kérem a workflow JSON-t.",
+      "expected_output": "Valid importable workflow JSON with a Schedule Trigger set to 08:00 daily, an RSS Feed Read node, and an email send node, correctly connected, with settings.executionOrder set.",
+      "files": [],
+      "assertions": []
+    },
+    {
+      "id": 2,
+      "name": "ai-agent-with-tool-and-memory",
+      "prompt": "I want an AI agent chatbot in n8n that uses OpenAI as the model, has a calculator tool, and remembers the conversation. Build the workflow.",
+      "expected_output": "Valid workflow JSON using @n8n/n8n-nodes-langchain nodes: a chat trigger, an AI Agent root node, an OpenAI chat model connected via ai_languageModel, a calculator tool via ai_tool, and a memory node via ai_memory. Connections use the ai_* types, not main.",
+      "files": [],
+      "assertions": []
+    }
+  ]
+}

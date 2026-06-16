@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# Secrets & runtime output (never commit)
+.env
+**/backups/
+**/audit/
+
+# Build artifacts
+*.zip
+dist/
+build/
+
+# Editor
+.DS_Store
+.idea/
+.vscode/
+
+# Generated typed models are regenerable from openapi/ via `make models`.
+# They are committed for convenience; uncomment to exclude:
+# n8n-control-plane/src/n8n_cp/generated/models/

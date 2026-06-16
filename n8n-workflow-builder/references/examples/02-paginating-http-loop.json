@@ -1,0 +1,96 @@
+{
+  "name": "Paginating API Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [ { "field": "hours", "hoursInterval": 6 } ] }
+      },
+      "id": "a0000000-0000-0000-0000-000000000001",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "assignments": { "assignments": [
+          { "id": "1", "name": "page", "type": "number", "value": 1 }
+        ] },
+        "options": {}
+      },
+      "id": "a0000000-0000-0000-0000-000000000002",
+      "name": "Init Page",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [220, 0]
+    },
+    {
+      "parameters": { "batchSize": 1, "options": {} },
+      "id": "a0000000-0000-0000-0000-000000000003",
+      "name": "Loop",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [440, 0]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.example.com/records?page={{ $json.page }}&perPage=100",
+        "options": {}
+      },
+      "id": "a0000000-0000-0000-0000-000000000004",
+      "name": "Fetch Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [660, 120]
+    },
+    {
+      "parameters": {
+        "conditions": { "options": { "caseSensitive": true, "typeValidation": "strict" },
+          "combinator": "and",
+          "conditions": [ { "leftValue": "={{ $json.hasMore }}", "rightValue": true,
+            "operator": { "type": "boolean", "operation": "true", "singleValue": true } } ] }
+      },
+      "id": "a0000000-0000-0000-0000-000000000005",
+      "name": "More Pages?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [880, 120]
+    },
+    {
+      "parameters": {
+        "assignments": { "assignments": [
+          { "id": "1", "name": "page", "type": "number", "value": "={{ $json.page + 1 }}" }
+        ] },
+        "options": {}
+      },
+      "id": "a0000000-0000-0000-0000-000000000006",
+      "name": "Next Page",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [1100, 0]
+    },
+    {
+      "parameters": { "jsCode": "return $input.all();" },
+      "id": "a0000000-0000-0000-0000-000000000007",
+      "name": "Process All",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [660, -120]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": { "main": [[ { "node": "Init Page", "type": "main", "index": 0 } ]] },
+    "Init Page": { "main": [[ { "node": "Loop", "type": "main", "index": 0 } ]] },
+    "Loop": { "main": [
+      [ { "node": "Process All", "type": "main", "index": 0 } ],
+      [ { "node": "Fetch Page", "type": "main", "index": 0 } ]
+    ] },
+    "Fetch Page": { "main": [[ { "node": "More Pages?", "type": "main", "index": 0 } ]] },
+    "More Pages?": { "main": [
+      [ { "node": "Next Page", "type": "main", "index": 0 } ],
+      []
+    ] },
+    "Next Page": { "main": [[ { "node": "Loop", "type": "main", "index": 0 } ]] }
+  },
+  "settings": { "executionOrder": "v1" }
+}

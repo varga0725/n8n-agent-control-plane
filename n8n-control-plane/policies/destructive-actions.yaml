@@ -1,0 +1,43 @@
+# Destructive-action policy.
+# Every action here requires N8N_ALLOW_DESTRUCTIVE=true AND an operation-bound,
+# short-lived confirmation token. The agent must first show the impact summary.
+
+version: 1
+
+require_confirmation: true
+require_env_flag: N8N_ALLOW_DESTRUCTIVE
+confirmation_ttl_seconds: 300
+
+actions:
+  - tool: n8n_workflow_delete
+    pre_checks: [require_backup, execution_impact, webhook_check]
+    impact_fields: [name, active, project, relatedCredentials, pastExecutions, webhooks]
+  - tool: n8n_execution_delete
+    pre_checks: []
+  - tool: n8n_credential_delete
+    pre_checks: [credential_usage_check]   # find workflows using it first
+  - tool: n8n_user_delete
+    pre_checks: [owner_delete_guard]
+  - tool: n8n_project_delete
+    pre_checks: [project_inventory_check]   # refuse non-empty without confirmation
+  - tool: n8n_project_user_remove
+    pre_checks: []
+  - tool: n8n_tag_delete
+    pre_checks: []
+  - tool: n8n_variable_delete
+    pre_checks: [usage_search]
+  - tool: n8n_data_table_delete
+    pre_checks: []
+  - tool: n8n_data_table_row_delete
+    pre_checks: [reject_empty_delete_filter, row_delete_preview]
+  - tool: n8n_data_table_column_delete
+    pre_checks: [column_delete_warning]     # permanent data loss
+  - tool: n8n_folder_delete
+    pre_checks: [folder_contents_check]
+  - tool: n8n_community_package_uninstall
+    pre_checks: [package_usage_check]
+
+hard_blocks:
+  # Conditions that are refused outright, even with a token.
+  - data_table_row_delete_with_empty_filter
+  - data_table_row_update_without_filter

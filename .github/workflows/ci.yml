@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly — catches drift when a new n8n API/version ships.
+    - cron: "0 6 * * 1"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dev deps
+        working-directory: n8n-control-plane
+        run: pip install pytest pyyaml
+
+      - name: Control plane — unit + contract (incl. OpenAPI)
+        working-directory: n8n-control-plane
+        run: PYTHONPATH=src python -m pytest tests/unit tests/contract -q
+
+      - name: Workflow builder — validate example workflows
+        working-directory: n8n-workflow-builder
+        run: |
+          for f in references/examples/*.json; do
+            echo "validating $f"
+            python scripts/validate_workflow.py "$f"
+          done

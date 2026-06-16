@@ -1,0 +1,132 @@
+# Permission policy — maps every primitive tool to its risk level and the
+# condition under which it may run. This file is the human-readable mirror of the
+# risk levels declared in src/n8n_cp/endpoints.py. The code is authoritative; keep
+# them in sync (tests/contract/test_policy_sync.py checks this).
+#
+# gating:
+#   read_only          -> auto
+#   reversible_write   -> auto after validation + audit
+#   production_impact  -> requires N8N_ALLOW_PRODUCTION_WRITES=true AND confirmation
+#   destructive        -> requires N8N_ALLOW_DESTRUCTIVE=true AND confirmation
+
+version: 1
+
+defaults:
+  mode: read-only
+  dry_run_preferred: true
+  audit: true
+  redact_secrets: true
+
+risk_levels:
+  read_only:
+    auto_execute: true
+    confirmation: false
+  reversible_write:
+    auto_execute: true
+    confirmation: false
+    requires: [validation, audit]
+  production_impact:
+    auto_execute: false
+    confirmation: true
+    env_flag: N8N_ALLOW_PRODUCTION_WRITES
+  destructive:
+    auto_execute: false
+    confirmation: true
+    env_flag: N8N_ALLOW_DESTRUCTIVE
+
+tools:
+  # discovery
+  n8n_discover_capabilities: read_only
+  # workflows
+  n8n_workflow_list: read_only
+  n8n_workflow_get: read_only
+  n8n_workflow_get_version: read_only
+  n8n_workflow_create: reversible_write
+  n8n_workflow_update: reversible_write   # escalates to production_impact if active
+  n8n_workflow_activate: production_impact
+  n8n_workflow_deactivate: production_impact
+  n8n_workflow_archive: reversible_write
+  n8n_workflow_unarchive: reversible_write
+  n8n_workflow_transfer: production_impact
+  n8n_workflow_get_tags: read_only
+  n8n_workflow_update_tags: reversible_write
+  n8n_workflow_delete: destructive
+  # executions
+  n8n_execution_list: read_only
+  n8n_execution_get: read_only
+  n8n_execution_retry: production_impact
+  n8n_execution_stop: production_impact
+  n8n_execution_stop_multiple: production_impact
+  n8n_execution_get_tags: read_only
+  n8n_execution_update_tags: reversible_write
+  n8n_execution_delete: destructive
+  # credentials
+  n8n_credential_list: read_only
+  n8n_credential_get: read_only
+  n8n_credential_get_schema: read_only
+  n8n_credential_create: reversible_write
+  n8n_credential_update: reversible_write
+  n8n_credential_test: read_only
+  n8n_credential_transfer: production_impact
+  n8n_credential_delete: destructive
+  # tags
+  n8n_tag_create: reversible_write
+  n8n_tag_list: read_only
+  n8n_tag_get: read_only
+  n8n_tag_update: reversible_write
+  n8n_tag_delete: destructive
+  # audit
+  n8n_audit_generate: read_only
+  # source control
+  n8n_source_control_pull: production_impact
+  # variables
+  n8n_variable_list: read_only
+  n8n_variable_create: reversible_write
+  n8n_variable_update: reversible_write
+  n8n_variable_delete: destructive
+  # projects
+  n8n_project_list: read_only
+  n8n_project_create: reversible_write
+  n8n_project_update: reversible_write
+  n8n_project_delete: destructive
+  n8n_project_user_list: read_only
+  n8n_project_user_add: production_impact
+  n8n_project_user_remove: destructive
+  n8n_project_user_update_role: production_impact
+  # users
+  n8n_user_list: read_only
+  n8n_user_get: read_only
+  n8n_user_create: production_impact
+  n8n_user_update_role: production_impact
+  n8n_user_delete: destructive
+  # folders
+  n8n_folder_list: read_only
+  n8n_folder_create: reversible_write
+  n8n_folder_get: read_only
+  n8n_folder_update: reversible_write
+  n8n_folder_delete: destructive
+  # data tables
+  n8n_data_table_list: read_only
+  n8n_data_table_create: reversible_write
+  n8n_data_table_get: read_only
+  n8n_data_table_update: reversible_write
+  n8n_data_table_delete: destructive
+  n8n_data_table_row_list: read_only
+  n8n_data_table_row_insert: reversible_write
+  n8n_data_table_row_update: reversible_write
+  n8n_data_table_row_upsert: reversible_write
+  n8n_data_table_row_delete: destructive
+  n8n_data_table_column_list: read_only
+  n8n_data_table_column_create: reversible_write
+  n8n_data_table_column_update: reversible_write
+  n8n_data_table_column_delete: destructive
+  # insights
+  n8n_insights_summary: read_only
+  # community packages
+  n8n_community_package_list: read_only
+  n8n_community_package_install: production_impact
+  n8n_community_package_update: production_impact
+  n8n_community_package_uninstall: destructive
+  # n8n packages (beta)
+  n8n_package_export: reversible_write
+  n8n_package_import: production_impact

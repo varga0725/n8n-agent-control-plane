@@ -1,0 +1,21 @@
+# Retry policy. Mirrors src/n8n_cp/core/retry.py.
+version: 1
+
+backoff:
+  strategy: exponential_with_jitter
+  schedule_ms: [500, 1500, 3500]
+  jitter_ratio: 0.25
+  honor_retry_after: true
+  max_attempts_default: 4   # 1 initial + N8N_MAX_RETRIES
+
+retry_on:
+  http_status: [429, 502, 503, 504]
+  network: [timeout, connection_reset, connection_error]
+
+never_retry_on:
+  http_status: [400, 401, 403, 404, 409, 422]
+  conditions:
+    - schema_validation_error
+    - permission_error
+    - destructive_operation
+    - non_idempotent_write

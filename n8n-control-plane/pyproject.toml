@@ -1,0 +1,28 @@
+[project]
+name = "n8n-agent-control-plane"
+version = "1.0.0"
+description = "Safe, modular, auditable control plane over the n8n Public REST API for AI agents and CI/CD."
+requires-python = ">=3.10"
+# Runtime uses only the Python standard library (urllib) — no install needed to
+# run. The extras below are dev-only.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "pyyaml>=6"]
+# Codegen + typed models. Runtime stays stdlib-only; install these only to
+# (re)generate or use the typed models in n8n_cp.generated.
+codegen = ["datamodel-code-generator>=0.25", "pydantic[email]>=2"]
+
+[project.scripts]
+n8n-cp = "n8n_cp.__main__:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

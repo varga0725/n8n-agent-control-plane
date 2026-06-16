@@ -1,0 +1,56 @@
+# Production-impact policy.
+# Actions that change live behavior. Require N8N_ALLOW_PRODUCTION_WRITES=true AND
+# a confirmation token. Active-workflow edits also require a prior backup + diff.
+
+version: 1
+
+require_confirmation: true
+require_env_flag: N8N_ALLOW_PRODUCTION_WRITES
+
+rules:
+  active_workflow_update:
+    description: Updating a workflow that is currently active.
+    must: [fetch_current, backup, validate, diff, show_impact]
+    note: >
+      n8n_workflow_update auto-detects the active state and escalates to
+      production_impact. Prefer the n8n_safe_workflow_deploy operation.
+
+  workflow_activation:
+    tools: [n8n_workflow_activate]
+    must: [validate_structure, confirm]
+
+  execution_retry:
+    tools: [n8n_execution_retry]
+    must: [idempotency_check]
+    never_auto_retry:
+      - payment_or_billing
+      - email_or_message_send
+      - crm_or_database_write
+      - file_delete
+      - non_idempotent_external_api
+      - order_or_booking_creation
+
+  bulk_execution_stop:
+    tools: [n8n_execution_stop_multiple]
+    must: [list_affected, impact_summary, confirm]
+
+  transfers:
+    tools: [n8n_workflow_transfer, n8n_credential_transfer]
+    must: [validate_destination_project, confirm]
+
+  source_control_pull:
+    tools: [n8n_source_control_pull]
+    must: [dry_run_preview, confirm]
+    never_auto_continue_on: [conflict, deletion]
+
+  access_changes:
+    tools: [n8n_user_create, n8n_user_update_role, n8n_project_user_add,
+            n8n_project_user_update_role]
+    must: [fetch_current_role, confirm]
+    extra_caution: [owner_role]
+
+  package_changes:
+    tools: [n8n_community_package_install, n8n_community_package_update,
+            n8n_package_import]
+    must: [validate_reference, identify_affected_workflows, confirm]
+    forbid: [production_auto_install]
