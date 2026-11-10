@@ -84,7 +84,14 @@ def required_param_names(schema: dict) -> set[str]:
 
 
 def available_versions(schema: dict) -> list:
-    return schema.get("availableVersions") or schema.get("version") or []
+    versions = schema.get("availableVersions")
+    if versions is None:
+        versions = schema.get("version")
+    if versions is None:
+        return []
+    if isinstance(versions, (int, float)):
+        return [versions]
+    return list(versions)
 
 
 def check_node(node: dict, schema: dict) -> list[tuple[str, str]]:
