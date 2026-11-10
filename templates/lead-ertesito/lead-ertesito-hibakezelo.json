@@ -1,0 +1,173 @@
+{
+  "name": "Lead-értesítő — hibakezelő",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Hibakezelő a Lead-értesítőhöz\n\nKét belépés, egy értesítés:\n- **Error Trigger** — a fő workflow kezeletlen hibája (Settings → Error Workflow = ennek a workflow-nak az ID-ja).\n- **Execute Workflow Trigger** — a fő workflow ághibája (Ághiba jelzése → `ERROR_WORKFLOW_ID`).\n\nCseréld: `COMPANY_NAME` `OWNER_EMAIL` `YOUR_CHAT_ID`, credential: `GMAIL_OAUTH2` `TELEGRAM_BOT_TOKEN`.\nAktiváld ezt a workflow-t, különben az Error Trigger productionban nem fut le.\n",
+        "height": 420,
+        "width": 420,
+        "color": 5
+      },
+      "id": "14141414-1414-4414-8414-141414141414",
+      "name": "Megjegyzés",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -40
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "id": "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+      "name": "Ághiba hívás",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a-text",
+              "name": "alert_text",
+              "type": "string",
+              "value": "={{ 'Lead-értesítő hiba — COMPANY_NAME\\n' + 'Workflow: ' + (($json.workflow && $json.workflow.name) || 'Lead-értesítő (sablon)') + '\\n' + 'Node: ' + (($json.execution && $json.execution.lastNodeExecuted) || $json.failed_node || '?') + '\\n' + 'Hiba: ' + (($json.execution && $json.execution.error && $json.execution.error.message) || $json.error_message || 'ismeretlen') + '\\n' + 'Execution: ' + (($json.execution && $json.execution.id) || '') }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "ffffffff-ffff-4fff-8fff-ffffffffffff",
+      "name": "Hibaüzenet összeállítása",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "YOUR_CHAT_ID",
+        "text": "={{ $json.alert_text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "12121212-1212-4212-8212-121212121212",
+      "name": "Tulajdonos Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        560,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_BOT_TOKEN",
+          "name": "TELEGRAM_BOT_TOKEN"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "OWNER_EMAIL",
+        "subject": "={{ 'Lead-értesítő hiba — COMPANY_NAME' }}",
+        "emailType": "text",
+        "message": "={{ $json.alert_text }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "FROM_NAME"
+        }
+      },
+      "id": "13131313-1313-4313-8313-131313131313",
+      "name": "Tulajdonos e-mail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        560,
+        220
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GMAIL_OAUTH2",
+          "name": "GMAIL_OAUTH2"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Hibaüzenet összeállítása",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ághiba hívás": {
+      "main": [
+        [
+          {
+            "node": "Hibaüzenet összeállítása",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hibaüzenet összeállítása": {
+      "main": [
+        [
+          {
+            "node": "Tulajdonos Telegram",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Tulajdonos e-mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Budapest",
+    "callerPolicy": "workflowsFromSameOwner",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  }
+}

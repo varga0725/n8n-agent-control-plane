@@ -13,6 +13,13 @@ LLM silently breaking production.
 The two fit together: build a workflow with `n8n-workflow-builder`, then deploy
 and manage it safely with `n8n-control-plane`.
 
+## Package templates
+
+Client-independent workflows live in [`templates/`](./templates). The first
+package is [`templates/lead-ertesito`](./templates/lead-ertesito) (Lead-értesítő):
+importable workflow JSON, a separate error workflow, and
+`python3 templates/lead-ertesito/check_template.py` for the offline check.
+
 ## Why "safe ops"
 Most n8n + AI tooling focuses on *building* workflows. This project's differentiator
 is **governance**: risk classification (read-only / reversible / production-impact /

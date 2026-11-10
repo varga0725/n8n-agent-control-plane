@@ -1,0 +1,585 @@
+{
+  "name": "Lead-értesítő (sablon)",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Lead-értesítő sablon (v1)\n\nÜgyfélenként klónozd, és cseréld a placeholdereket (a JSON-ban Ctrl+F, vagy a node mezőkben). Titkot, sheet ID-t, chat ID-t ne írj a repóba — csak ide, az importált példányba.\n\n**Szövegek:** `COMPANY_NAME` `FROM_NAME` `REPLY_SUBJECT` `REPLY_BODY_TEMPLATE` `FORM_TITLE` `FORM_DESCRIPTION` `FORM_THANK_YOU`\n**Azonosítók:** `YOUR_SHEET_ID` `YOUR_CHAT_ID` `OWNER_EMAIL` `ERROR_WORKFLOW_ID`\n**Fül:** `Leadek` (oszlopok: Időpont | Név | Email | Telefon | Üzenet | Forrás)\n**Mezőleképezés** az „Adatok normalizálása” node-ban, a kulcslista első eleme: `FIELD_NAME` `FIELD_EMAIL` `FIELD_PHONE` `FIELD_MESSAGE` `FIELD_SOURCE`\n**Credential placeholder (titok nélkül):** `GMAIL_OAUTH2` `GOOGLE_SHEETS_OAUTH2` `TELEGRAM_BOT_TOKEN` — import után válaszd ki a valódi credentialt.\n\nBelépés: űrlap (Új lead) vagy POST webhook `lead`. Az űrlap a saját köszönő szövegét mutatja; a webhook `200 {\"ok\":true}`.\nIdőzóna: Europe/Budapest.\n\nA tulajdonosi e-mail node alapból ki van kapcsolva. Gmail Trigger, SMS és deduplikáció nincs a v1-ben.\nHa egy párhuzamos ág hibázik, a többi lefut. Az ág hibakimenete az „Ághiba jelzése” node-on a hibakezelő workflow-t hívja (`ERROR_WORKFLOW_ID`). A kezeletlen hiba a workflow Error Workflow beállításán ugyanoda megy.\n\nshortcut: a Typeform `form_response.answers` tömbjét és az Elementor tömbös mezőit a v1 nem bontja ki; a lapos JSON és az egy szintű `fields` / `data` / `form_fields` / `payload` boríték elég, amíg a kulcsok a FIELD_* listában vannak.\n",
+        "height": 720,
+        "width": 460,
+        "color": 4
+      },
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Megjegyzés",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -480,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "FORM_TITLE",
+        "formDescription": "FORM_DESCRIPTION",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Név",
+              "fieldType": "text",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Telefon",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Üzenet",
+              "fieldType": "textarea",
+              "requiredField": false
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {
+          "path": "uj-lead",
+          "buttonLabel": "Küldés",
+          "appendAttribution": false,
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "text",
+              "formSubmittedText": "FORM_THANK_YOU"
+            }
+          }
+        }
+      },
+      "id": "22222222-2222-4222-8222-222222222222",
+      "name": "Új lead (űrlap)",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        40,
+        0
+      ],
+      "webhookId": "22222222-2222-4222-8222-222222222222"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "33333333-3333-4333-8333-333333333333",
+      "name": "Webhook (POST)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        40,
+        280
+      ],
+      "webhookId": "33333333-3333-4333-8333-333333333333",
+      "notes": "POST JSON vagy form mezők. A kulcsok az Adatok normalizálása node FIELD_* listájában cserélhetők."
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f-name",
+              "name": "name",
+              "type": "string",
+              "value": "={{ (() => {\n  const raw = $json;\n  const body = raw.body && typeof raw.body === 'object' && !Array.isArray(raw.body) ? raw.body : null;\n  const bags = [body, body && body.fields, body && body.data, body && body.form_fields, body && body.payload, raw].filter((v) => v && typeof v === 'object' && !Array.isArray(v));\n  const keys = [\"FIELD_NAME\", \"Név\", \"Nev\", \"name\", \"Name\", \"full_name\", \"fullName\", \"nev\"];\n  let picked = '';\n  for (const bag of bags) {\n    for (const k of keys) {\n      const v = bag[k];\n      if (v != null && String(v).trim() !== '') { picked = String(v).trim(); break; }\n    }\n    if (picked) break;\n  }\n  \n  \n  return picked;\n})() }}"
+            },
+            {
+              "id": "f-email",
+              "name": "email",
+              "type": "string",
+              "value": "={{ (() => {\n  const raw = $json;\n  const body = raw.body && typeof raw.body === 'object' && !Array.isArray(raw.body) ? raw.body : null;\n  const bags = [body, body && body.fields, body && body.data, body && body.form_fields, body && body.payload, raw].filter((v) => v && typeof v === 'object' && !Array.isArray(v));\n  const keys = [\"FIELD_EMAIL\", \"Email\", \"email\", \"e-mail\", \"E-mail\", \"mail\"];\n  let picked = '';\n  for (const bag of bags) {\n    for (const k of keys) {\n      const v = bag[k];\n      if (v != null && String(v).trim() !== '') { picked = String(v).trim(); break; }\n    }\n    if (picked) break;\n  }\n  picked = picked.toLowerCase();\n  \n  return picked;\n})() }}"
+            },
+            {
+              "id": "f-phone",
+              "name": "phone",
+              "type": "string",
+              "value": "={{ (() => {\n  const raw = $json;\n  const body = raw.body && typeof raw.body === 'object' && !Array.isArray(raw.body) ? raw.body : null;\n  const bags = [body, body && body.fields, body && body.data, body && body.form_fields, body && body.payload, raw].filter((v) => v && typeof v === 'object' && !Array.isArray(v));\n  const keys = [\"FIELD_PHONE\", \"Telefon\", \"telefon\", \"phone\", \"Phone\", \"tel\", \"phone_number\"];\n  let picked = '';\n  for (const bag of bags) {\n    for (const k of keys) {\n      const v = bag[k];\n      if (v != null && String(v).trim() !== '') { picked = String(v).trim(); break; }\n    }\n    if (picked) break;\n  }\n  \n  \n  return picked;\n})() }}"
+            },
+            {
+              "id": "f-message",
+              "name": "message",
+              "type": "string",
+              "value": "={{ (() => {\n  const raw = $json;\n  const body = raw.body && typeof raw.body === 'object' && !Array.isArray(raw.body) ? raw.body : null;\n  const bags = [body, body && body.fields, body && body.data, body && body.form_fields, body && body.payload, raw].filter((v) => v && typeof v === 'object' && !Array.isArray(v));\n  const keys = [\"FIELD_MESSAGE\", \"Üzenet\", \"uzenet\", \"message\", \"Message\", \"notes\", \"comment\"];\n  let picked = '';\n  for (const bag of bags) {\n    for (const k of keys) {\n      const v = bag[k];\n      if (v != null && String(v).trim() !== '') { picked = String(v).trim(); break; }\n    }\n    if (picked) break;\n  }\n  \n  \n  return picked;\n})() }}"
+            },
+            {
+              "id": "f-source",
+              "name": "source",
+              "type": "string",
+              "value": "={{ (() => {\n  const raw = $json;\n  const body = raw.body && typeof raw.body === 'object' && !Array.isArray(raw.body) ? raw.body : null;\n  const bags = [body, body && body.fields, body && body.data, body && body.form_fields, body && body.payload, raw].filter((v) => v && typeof v === 'object' && !Array.isArray(v));\n  const keys = [\"FIELD_SOURCE\", \"Forrás\", \"forras\", \"source\", \"Source\", \"utm_source\", \"origin\"];\n  let picked = '';\n  for (const bag of bags) {\n    for (const k of keys) {\n      const v = bag[k];\n      if (v != null && String(v).trim() !== '') { picked = String(v).trim(); break; }\n    }\n    if (picked) break;\n  }\n  \n  if (!picked) picked = raw.body ? 'webhook' : 'form';\n  return picked;\n})() }}"
+            },
+            {
+              "id": "f-received",
+              "name": "received_at",
+              "type": "string",
+              "value": "={{ $now.setZone('Europe/Budapest').toFormat('yyyy-MM-dd HH:mm:ss') }}"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "44444444-4444-4444-8444-444444444444",
+      "name": "Adatok normalizálása",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        340,
+        140
+      ],
+      "notes": "shortcut: Typeform answers[] és az Elementor tömbös mezői nincsenek kibontva; lapos kulcs vagy egy boríték (fields/data/form_fields/payload). A FIELD_* az első keresett kulcs."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "email-ok",
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+              "operator": {
+                "type": "string",
+                "operation": "regex"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "55555555-5555-4555-8555-555555555555",
+      "name": "Van érvényes e-mail?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ 'REPLY_SUBJECT' }}",
+        "emailType": "text",
+        "message": "={{ 'Kedves ' + ($json.name || 'Érdeklődő') + ',\\n\\n' + 'REPLY_BODY_TEMPLATE' + '\\n\\n' + 'Üdvözlettel,\\n' + 'FROM_NAME' + '\\n' + 'COMPANY_NAME' }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "FROM_NAME"
+        }
+      },
+      "id": "66666666-6666-4666-8666-666666666666",
+      "name": "Automatikus válasz a leadnek",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        940,
+        -120
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GMAIL_OAUTH2",
+          "name": "GMAIL_OAUTH2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leadek",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Időpont": "={{ $json.received_at }}",
+            "Név": "={{ $json.name }}",
+            "Email": "={{ $json.email }}",
+            "Telefon": "={{ $json.phone }}",
+            "Üzenet": "={{ $json.message }}",
+            "Forrás": "={{ $json.source }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Időpont",
+              "displayName": "Időpont",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Név",
+              "displayName": "Név",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Telefon",
+              "displayName": "Telefon",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Üzenet",
+              "displayName": "Üzenet",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Forrás",
+              "displayName": "Forrás",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "id": "77777777-7777-4777-8777-777777777777",
+      "name": "Lead mentése (Google Sheets)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        640,
+        180
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "GOOGLE_SHEETS_OAUTH2",
+          "name": "GOOGLE_SHEETS_OAUTH2"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "YOUR_CHAT_ID",
+        "text": "={{ (() => {\n  const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n  return [\n    '<b>Új lead — COMPANY_NAME</b>',\n    '<b>Név:</b> ' + esc($json.name),\n    '<b>Email:</b> ' + esc($json.email),\n    '<b>Telefon:</b> ' + esc($json.phone),\n    '<b>Üzenet:</b> ' + esc($json.message),\n    '<b>Forrás:</b> ' + esc($json.source),\n    '<b>Időpont:</b> ' + esc($json.received_at)\n  ].join('\\n');\n})() }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "88888888-8888-4888-8888-888888888888",
+      "name": "Értesítés a tulajdonosnak",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        400
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "TELEGRAM_BOT_TOKEN",
+          "name": "TELEGRAM_BOT_TOKEN"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "OWNER_EMAIL",
+        "subject": "={{ 'Új lead — COMPANY_NAME' }}",
+        "emailType": "text",
+        "message": "={{ 'Új lead — COMPANY_NAME\\n\\n' + 'Név: ' + ($json.name || '') + '\\n' + 'Email: ' + ($json.email || '') + '\\n' + 'Telefon: ' + ($json.phone || '') + '\\n' + 'Üzenet: ' + ($json.message || '') + '\\n' + 'Forrás: ' + ($json.source || '') + '\\n' + 'Időpont: ' + ($json.received_at || '') }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "FROM_NAME"
+        }
+      },
+      "id": "99999999-9999-4999-8999-999999999999",
+      "name": "Értesítés a tulajdonosnak (e-mail)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        640,
+        620
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "GMAIL_OAUTH2",
+          "name": "GMAIL_OAUTH2"
+        }
+      },
+      "disabled": true,
+      "notes": "Opcionális. Kapcsold be, és cseréld az OWNER_EMAIL placeholdert. Alapból kikapcsolva.",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "name": "Válasz 200 OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        340,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e-node",
+              "name": "failed_node",
+              "type": "string",
+              "value": "={{ $prevNode.name }}"
+            },
+            {
+              "id": "e-msg",
+              "name": "error_message",
+              "type": "string",
+              "value": "={{ ($json.error && $json.error.message) || $json.message || 'A(z) ' + $prevNode.name + ' ág hibázott. Részletek az execution logban.' }}"
+            },
+            {
+              "id": "e-name",
+              "name": "name",
+              "type": "string",
+              "value": "={{ $json.name || '' }}"
+            },
+            {
+              "id": "e-email",
+              "name": "email",
+              "type": "string",
+              "value": "={{ $json.email || '' }}"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      },
+      "id": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "name": "Ághiba adatok",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        980,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "value": "ERROR_WORKFLOW_ID",
+          "mode": "id"
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "id": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      "name": "Ághiba jelzése",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1220,
+        400
+      ],
+      "notes": "A hibakezelő workflow ID-ja. A hívott workflow triggerének Accept all data (passthrough) a bemenete, ezért workflowInputs nincs megadva.",
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Új lead (űrlap)": {
+      "main": [
+        [
+          {
+            "node": "Adatok normalizálása",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook (POST)": {
+      "main": [
+        [
+          {
+            "node": "Válasz 200 OK",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Adatok normalizálása",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Adatok normalizálása": {
+      "main": [
+        [
+          {
+            "node": "Van érvényes e-mail?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Lead mentése (Google Sheets)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Értesítés a tulajdonosnak",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Értesítés a tulajdonosnak (e-mail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Van érvényes e-mail?": {
+      "main": [
+        [
+          {
+            "node": "Automatikus válasz a leadnek",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Automatikus válasz a leadnek": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Ághiba adatok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead mentése (Google Sheets)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Ághiba adatok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Értesítés a tulajdonosnak": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Ághiba adatok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Értesítés a tulajdonosnak (e-mail)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Ághiba adatok",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ághiba adatok": {
+      "main": [
+        [
+          {
+            "node": "Ághiba jelzése",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Budapest",
+    "errorWorkflow": "ERROR_WORKFLOW_ID",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  }
+}
